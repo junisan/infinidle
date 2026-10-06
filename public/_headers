@@ -1,3 +1,6 @@
+/*
+  X-Robots-Tag: noindex, nofollow
+
 /words/*
   Cache-Control: public, max-age=86400
 

@@ -92,6 +92,11 @@ suelen detectarse y retirarse en las primeras horas.
 - Build output directory: `dist`
 - Variable de entorno: `PNPM_VERSION=12.8.1`. La versión de Node la coge de `.node-version`.
 
+El sitio no se indexa: lleva `noindex` tanto en una etiqueta meta como en la cabecera `X-Robots-Tag`.
+Las vistas previas al compartir (WhatsApp, Telegram, X…) usan `public/og.png`, que se genera desde
+`scripts/og/og.html` con `scripts/build-og.sh`. Las etiquetas `og:*` necesitan la URL completa del
+sitio; por defecto es `https://infinidle.juannicolas.eu` y se puede cambiar con la variable `SITE_URL`.
+
 `public/_headers` deja las listas en caché un día y el JS y el CSS (llevan hash en el nombre) y las fuentes, un año.
 
 ## Créditos
@@ -105,6 +110,8 @@ suelen detectarse y retirarse en las primeras horas.
     publicadas bajo [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 - Tipografía [Nunito](https://github.com/googlefonts/nunito), bajo SIL Open Font License
   (`public/fonts/OFL.txt`).
+- Tipografía [Caveat](https://github.com/googlefonts/caveat) para la firma de la imagen de vista previa,
+  bajo SIL Open Font License (`scripts/og/fonts/OFL-Caveat.txt`). Solo se usa al generar `og.png`.
 - La mecánica está inspirada en Wordle, de Josh Wardle. Wordle es una marca de The New York Times
   Company; INFINIDLE es un proyecto personal sin ninguna relación con ellos.
 

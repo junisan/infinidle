@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Plantilla de public/og.png (1200×630). Se renderiza con scripts/build-og.sh -->
+    <style>
+      @font-face {
+        font-family: 'Nunito';
+        font-weight: 600;
+        src: url('../../public/fonts/nunito-600.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Nunito';
+        font-weight: 900;
+        src: url('../../public/fonts/nunito-900.woff2') format('woff2');
+      }
+      /* Manuscrita solo para la firma; se usa al generar la imagen, no se sirve en la web */
+      @font-face {
+        font-family: 'Caveat';
+        font-weight: 400 700;
+        src: url('fonts/Caveat.ttf') format('truetype');
+      }
+      :root {
+        --teal: #1a9384;
+        --amber: #d9a21b;
+        --slate: #5d6b7a;
+        --ink: #16202b;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        gap: 72px;
+        padding: 0 88px;
+        box-sizing: border-box;
+        background: #f4f7f9;
+        font-family: 'Nunito', sans-serif;
+        color: var(--ink);
+      }
+      .text {
+        flex: 1;
+      }
+      .logo {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 36px;
+      }
+      .logo span {
+        width: 92px;
+        height: 92px;
+        border-radius: 16px;
+        background: var(--teal);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        font-size: 58px;
+      }
+      .logo svg {
+        width: 74%;
+        height: 74%;
+      }
+      h1 {
+        margin: 0 0 18px;
+        font-weight: 900;
+        font-size: 58px;
+        line-height: 1.05;
+        letter-spacing: -0.01em;
+      }
+      p {
+        margin: 0;
+        font-weight: 600;
+        font-size: 30px;
+        color: #5b6774;
+      }
+      .signature {
+        display: inline-block;
+        margin-top: 26px;
+        font-family: 'Caveat', cursive;
+        font-weight: 700;
+        font-size: 46px;
+        line-height: 1;
+        color: var(--teal);
+        transform: rotate(-3deg);
+        transform-origin: left center;
+      }
+      .board {
+        display: grid;
+        gap: 10px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+      }
+      .row span {
+        width: 74px;
+        height: 74px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        font-size: 42px;
+        color: #fff;
+      }
+      .c { background: var(--teal); }
+      .p { background: var(--amber); }
+      .a { background: var(--slate); }
+      .e { border: 3px solid #d3dae1; box-sizing: border-box; }
+    </style>
+  </head>
+  <body>
+    <div class="text">
+      <div class="logo">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="round">
+            <path d="M12 12c-1.8-2.6-3.4-3.8-5.2-3.8a3.8 3.8 0 0 0 0 7.6c1.8 0 3.4-1.2 5.2-3.8s3.4-3.8 5.2-3.8a3.8 3.8 0 0 1 0 7.6c-1.8 0-3.4-1.2-5.2-3.8Z" />
+          </svg>
+        </span>
+        <span>D</span><span>L</span><span>E</span>
+      </div>
+      <h1>Adivina la palabra.<br />Y la siguiente.<br />Y la siguiente…</h1>
+      <p>En español, con Ñ y sin límite</p>
+      <div class="signature">By Juan Nicolás</div>
+    </div>
+    <div class="board" aria-hidden="true">
+      <div class="row"><span class="p">A</span><span class="a">E</span><span class="p">R</span><span class="c">E</span><span class="a">O</span></div>
+      <div class="row"><span class="p">A</span><span class="a">M</span><span class="c">B</span><span class="a">A</span><span class="c">R</span></div>
+      <div class="row"><span class="c">H</span><span class="c">A</span><span class="c">B</span><span class="c">E</span><span class="c">R</span></div>
+      <div class="row"><span class="e"></span><span class="e"></span><span class="e"></span><span class="e"></span><span class="e"></span></div>
+      <div class="row"><span class="e"></span><span class="e"></span><span class="e"></span><span class="e"></span><span class="e"></span></div>
+      <div class="row"><span class="e"></span><span class="e"></span><span class="e"></span><span class="e"></span><span class="e"></span></div>
+    </div>
+  </body>
+</html>
