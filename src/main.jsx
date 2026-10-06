@@ -17,3 +17,9 @@ loadWords(length)
       </StrictMode>,
     )
   })
+
+// Guarda el juego en el dispositivo para poder jugar sin conexión (src/sw.js). Solo en producción, y
+// tras la carga, para que la descarga de lo que se guarda no compita con la primera partida.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'))
+}

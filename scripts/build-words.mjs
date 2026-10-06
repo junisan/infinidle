@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Genera las listas de palabras que consume la app (public/words/es/).
+ * Genera las listas de palabras que consume la app (src/words/es/).
  *
  *   node scripts/build-words.mjs          # usa la caché de scripts/.cache si existe
  *   node scripts/build-words.mjs --fresh  # vuelve a descargar las fuentes
@@ -11,8 +11,8 @@
  *  - Frecuencia de uso (subtítulos, con tildes): hermitdave/FrequencyWords
  *
  * Salida por longitud N (5, 6, 7):
- *  - public/words/es/N/solutions.txt  → palabras a adivinar (con tildes), lemas comunes
- *  - public/words/es/N/valid.txt      → palabras aceptadas como intento (normalizadas)
+ *  - src/words/es/N/solutions.txt  → palabras a adivinar (con tildes), lemas comunes
+ *  - src/words/es/N/valid.txt      → palabras aceptadas como intento (normalizadas)
  */
 import { mkdir, readFile, writeFile, stat } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE = join(ROOT, 'scripts/.cache')
-const OUT = join(ROOT, 'public/words/es')
+const OUT = join(ROOT, 'src/words/es')
 
 const LENGTHS = [5, 6, 7]
 // Máximo de soluciones por longitud (las más frecuentes primero)

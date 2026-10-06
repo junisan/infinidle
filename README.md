@@ -27,7 +27,7 @@ navegador (localStorage).
 
 ## Las palabras
 
-En `public/words/es/` hay dos listas por longitud:
+En `src/words/es/` hay dos listas por longitud:
 
 | Letras | Soluciones | Intentos válidos |
 | ------ | ---------: | ---------------: |
@@ -64,11 +64,26 @@ Pages. Algunas decisiones para que cargue rápido incluso con mala cobertura:
   CSS, a React ni a la tipografía. En móvil se dobla en un cuadrado (CAR / GAN / DO∞).
 - **Las listas se piden a la vez que React.** Un script pequeño en el `<head>` mira qué modo tenías
   guardado y lanza la descarga antes de que llegue el JavaScript de la app. React no se monta hasta tener
-  las palabras, así que del «CARGANDO» se pasa directo al tablero, sin parpadeos.
+  las palabras, así que del «CARGANDO» se pasa directo al tablero, sin parpadeos. Las listas llevan hash
+  en el nombre, como el JS; `vite.config.js` pone sus direcciones en ese script al construir.
 - **La tipografía se sirve desde aquí.** Nunito sin Google Fonts, recortada a dos pesos (600 y 900) y al
   alfabeto latino: unos 12 KB por peso. Se regenera con `scripts/build-fonts.sh`.
 - **Comprobar una palabra es instantáneo.** Los intentos válidos se cargan en un `Set`, que se consulta
   sin recorrer la lista. La lista de 7 letras tiene casi 50.000 palabras.
+
+## Sin conexión
+
+El juego se puede instalar desde el navegador («Instalar» en Chrome/Edge/Android, «Añadir a pantalla de
+inicio» en iPhone) y funciona sin Internet. Hace falta abrirlo una vez con conexión.
+
+- `src/sw.js` es el service worker. No se empaqueta con la app: al terminar `pnpm build`, un plugin de
+  `vite.config.js` lo copia a `dist/sw.js` con la lista de todo lo que hay que guardar (página, JS, CSS,
+  fuentes y las listas de los tres modos) y una versión, que es un hash del contenido de todo ello.
+- La página va primero a la red (con un límite de 3 segundos) y, sin red, se sirve la guardada. Todo lo
+  demás sale de la caché.
+- Al desplegar, cualquier cambio cambia `sw.js`. Al abrir el juego con conexión, el navegador lo nota,
+  descarga todo de nuevo y borra la versión anterior. No hay que hacer nada a mano.
+- Los iconos de `public/icons/` se generan desde el logo con `scripts/build-icons.sh`.
 
 ## Desarrollo
 
@@ -97,7 +112,8 @@ Las vistas previas al compartir (WhatsApp, Telegram, X…) usan `public/og.png`,
 `scripts/og/og.html` con `scripts/build-og.sh`. Las etiquetas `og:*` necesitan la URL completa del
 sitio; por defecto es `https://infinidle.juannicolas.eu` y se puede cambiar con la variable `SITE_URL`.
 
-`public/_headers` deja las listas en caché un día y el JS y el CSS (llevan hash en el nombre) y las fuentes, un año.
+`public/_headers` deja en caché un año el JS, el CSS y las listas de palabras (llevan hash en el nombre) y las fuentes.
+`sw.js` y el manifiesto no se cachean, para que las actualizaciones lleguen en cuanto se despliegan.
 
 ## Créditos
 
@@ -117,6 +133,6 @@ sitio; por defecto es `https://infinidle.juannicolas.eu` y se puede cambiar con 
 
 ## Licencia
 
-El código está bajo licencia [MIT](LICENSE). Las listas de palabras de `public/words/` y la tipografía
+El código está bajo licencia [MIT](LICENSE). Las listas de palabras de `src/words/` y la tipografía
 de `public/fonts/` se derivan de los proyectos de terceros citados arriba y mantienen sus propias
 licencias.

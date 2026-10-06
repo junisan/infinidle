@@ -9,11 +9,14 @@ export function normalize(word) {
     .toUpperCase()
 }
 
+// Vite les pone un hash en el nombre al construir: si cambia una lista, cambia su dirección
+const URLS = import.meta.glob('../words/es/*/*.txt', { query: '?url', import: 'default', eager: true })
+
 const cache = new Map()
 const ready = new Map()
 
 async function fetchList(length, name) {
-  const res = await fetch(`${import.meta.env.BASE_URL}words/es/${length}/${name}.txt`)
+  const res = await fetch(URLS[`../words/es/${length}/${name}.txt`])
   if (!res.ok) throw new Error(`No se pudo cargar ${name}`)
   return res.text()
 }
