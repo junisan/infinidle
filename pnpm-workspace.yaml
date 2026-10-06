@@ -1,0 +1,3 @@
+# Seguridad de la cadena de suministro: no instalar versiones publicadas hace menos de 7 días
+# (10080 minutos). Si una dependencia necesita una versión más reciente, se rechaza la instalación.
+minimumReleaseAge: 10080

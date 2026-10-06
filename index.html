@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="INFINIDLE: adivina palabras en español sin límite. Modos de 5, 6 y 7 letras." />
+    <meta name="theme-color" content="#ffffff" />
+    <title>INFINIDLE</title>
+    <script>
+      // Primero de todo: descarga las listas del modo guardado en paralelo con CSS, fuentes y React
+      // (src/lib/words.js recoge la promesa). Va antes de cualquier hoja de estilos para no esperarla.
+      ;(function () {
+        var length = 5
+        try {
+          var saved = JSON.parse(localStorage.getItem('infinidle:v1:settings'))
+          if (saved && [5, 6, 7].indexOf(saved.length) >= 0) length = saved.length
+        } catch (e) {}
+        window.__infinidlePreload = {
+          length: length,
+          lists: Promise.all(
+            ['solutions', 'valid'].map(function (name) {
+              return fetch('/words/es/' + length + '/' + name + '.txt').then(function (r) {
+                if (!r.ok) throw new Error('No se pudo cargar ' + name)
+                return r.text()
+              })
+            }),
+          ),
+        }
+        window.__infinidlePreload.lists.catch(function () {})
+      })()
+    </script>
+    <!-- Nunito servida desde aquí: solo pesos 600/900 y alfabeto latino (scripts/build-fonts.sh) -->
+    <link rel="preload" href="/fonts/nunito-900.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      @font-face {
+        font-family: 'Nunito';
+        font-weight: 600;
+        font-display: swap;
+        src: url('/fonts/nunito-600.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Nunito';
+        font-weight: 900;
+        font-display: swap;
+        src: url('/fonts/nunito-900.woff2') format('woff2');
+      }
+      /* Pantalla de arranque: se pinta con el HTML, antes de que lleguen CSS, JS y listas.
+         Colores duplicados de src/index.css para no depender de él. */
+      .splash {
+        --teal: #1a9384;
+        --ink: #16202b;
+        --line: #9aa5b1;
+        --soft: #6b7785;
+        --tile: min(42px, calc((100vw - 90px) / 8));
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        background: #fff;
+        font-family: 'Nunito', system-ui, sans-serif;
+        font-weight: 900;
+        color: var(--ink);
+      }
+      @media (prefers-color-scheme: dark) {
+        .splash {
+          --ink: #eef2f6;
+          --line: #56626f;
+          --soft: #94a0ad;
+          background: #11161c;
+        }
+      }
+      .splash-logo {
+        width: 64px;
+        height: 64px;
+      }
+      .splash-row {
+        display: flex;
+        gap: 6px;
+        perspective: 400px;
+      }
+      .splash-row span {
+        width: var(--tile);
+        height: var(--tile);
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        font-size: calc(var(--tile) * 0.56);
+        animation: splash-wave 1.6s ease-in-out infinite backwards;
+      }
+      .splash-row span:nth-child(2) { animation-delay: 110ms; }
+      .splash-row span:nth-child(3) { animation-delay: 220ms; }
+      .splash-row span:nth-child(4) { animation-delay: 330ms; }
+      .splash-row span:nth-child(5) { animation-delay: 440ms; }
+      .splash-row span:nth-child(6) { animation-delay: 550ms; }
+      .splash-row span:nth-child(7) { animation-delay: 660ms; }
+      .splash-row span:nth-child(8) { animation-delay: 770ms; }
+      /* Ficha ∞: solo en móvil, cierra el cuadrado CAR / GAN / DO∞ y hace de logo */
+      .splash-row .splash-inf {
+        display: none;
+        background: var(--teal);
+        border-color: var(--teal);
+        animation: splash-pulse 1.6s ease-in-out infinite;
+      }
+      .splash-inf svg {
+        width: 70%;
+        height: 70%;
+      }
+      @media (max-width: 520px) {
+        .splash {
+          --tile: min(72px, 21vw);
+        }
+        .splash-logo {
+          display: none;
+        }
+        .splash-row {
+          display: grid;
+          grid-template-columns: repeat(3, var(--tile));
+        }
+        .splash-row .splash-inf {
+          display: grid;
+        }
+      }
+      @keyframes splash-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(0.92); }
+      }
+      .splash p {
+        margin: 0;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--soft);
+      }
+      @keyframes splash-wave {
+        0%, 60%, 100% { transform: rotateX(0); background: transparent; color: var(--ink); }
+        15% { transform: rotateX(90deg); }
+        30%, 45% { transform: rotateX(0); background: var(--teal); border-color: var(--teal); color: #fff; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .splash-row span, .splash-row .splash-inf { animation: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="splash" role="status" aria-label="Cargando">
+        <svg class="splash-logo" viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="12" fill="#1a9384" />
+          <path
+            d="M32 32C27.5 25.5 23.5 22.5 19 22.5a9.5 9.5 0 0 0 0 19c4.5 0 8.5-3 13-9.5s8.5-9.5 13-9.5a9.5 9.5 0 0 1 0 19c-4.5 0-8.5-3-13-9.5Z"
+            fill="none" stroke="#fff" stroke-width="5.5" stroke-linejoin="round" />
+        </svg>
+        <div class="splash-row"><span>C</span><span>A</span><span>R</span><span>G</span><span>A</span><span>N</span><span>D</span><span>O</span><span class="splash-inf" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"><path d="M12 12c-1.8-2.6-3.4-3.8-5.2-3.8a3.8 3.8 0 0 0 0 7.6c1.8 0 3.4-1.2 5.2-3.8s3.4-3.8 5.2-3.8a3.8 3.8 0 0 1 0 7.6c-1.8 0-3.4-1.2-5.2-3.8Z" /></svg></span></div>
+        <p id="splash-text">Preparando palabras…</p>
+      </div>
+    </div>
+    <script>
+      document.getElementById('splash-text').textContent =
+        'Palabras de ' + window.__infinidlePreload.length + ' letras'
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
