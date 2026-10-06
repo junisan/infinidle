@@ -35,6 +35,9 @@ export function HelpPanel({ onClose, maxAttempts }) {
         La <strong>O</strong> no está en la palabra.
       </p>
       <p className="muted">Puedes jugar con 5, 6 o 7 letras y cambiar el número de intentos en Ajustes.</p>
+      <p className="muted">
+        Se recogen estadísticas de uso anónimas, sin cookies, para mejorar el juego y sus listas de palabras.
+      </p>
     </Modal>
   )
 }
@@ -117,7 +120,7 @@ export function SettingsPanel({ onClose, length, onLength, attempts, onAttempts,
   )
 }
 
-export function EndPanel({ onClose, won, solution, attempts, maxAttempts, stats, onNext, onShare }) {
+export function EndPanel({ onClose, won, solution, attempts, maxAttempts, stats, blockedNotice, onNext, onShare }) {
   return (
     <Modal title={won ? '¡Acertaste!' : 'Otra vez será'} onClose={onClose}>
       <p className="center muted">La palabra era</p>
@@ -130,9 +133,17 @@ export function EndPanel({ onClose, won, solution, attempts, maxAttempts, stats,
         href={`https://dle.rae.es/${encodeURIComponent(solution)}`}
         target="_blank"
         rel="noreferrer"
+        data-umami-event="rae"
+        data-umami-event-letras={solution.length}
       >
         Ver «{solution}» en el diccionario de la RAE
       </a>
+      {blockedNotice && (
+        <p className="center muted notice">
+          Parece que algo en tu navegador bloquea las estadísticas anónimas del juego. Si te gusta INFINIDLE,
+          permitirlas me ayuda a saber qué palabras sobran o faltan. Sin cookies y sin saber quién eres.
+        </p>
+      )}
       <div className="actions">
         <button type="button" className="button secondary" onClick={onShare}>
           Compartir

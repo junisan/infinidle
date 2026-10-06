@@ -22,8 +22,8 @@ rato que quieras.
   normales (sustantivos, adjetivos, infinitivos…), pero para probar letras vale cualquier palabra que
   exista: CANTÉIS, ÁRBOLES, TUVIERA…
 
-No hay cuentas ni anuncios. El progreso se guarda en el
-navegador (localStorage).
+No hay cuentas, ni anuncios, ni cookies. El progreso se guarda en el navegador (localStorage) y se
+recogen estadísticas de uso anónimas para mejorar el juego ([más abajo](#estadísticas-de-uso) qué se mide).
 
 ## Las palabras
 
@@ -85,6 +85,32 @@ inicio» en iPhone) y funciona sin Internet. Hace falta abrirlo una vez con cone
   descarga todo de nuevo y borra la versión anterior. No hay que hacer nada a mano.
 - Los iconos de `public/icons/` se generan desde el logo con `scripts/build-icons.sh`.
 
+## Estadísticas de uso
+
+Para saber cómo se juega y mejorar las listas de palabras se usa [Umami](https://umami.is), sin cookies
+y sin ningún identificador del jugador. `vite.config.js` añade el script a `index.html` solo si existe la
+variable de entorno `UMAMI_WEBSITE_ID` (sin ella, ni las pruebas ni los forks envían nada), y aun así
+solo cuenta en el dominio de producción (`data-domains`), no en local ni en las vistas previas. Los eventos salen de
+`src/lib/analytics.js`:
+
+| Evento              | Cuándo                              | Datos                                                                                                                                                |
+| ------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `partida`           | Al terminar una partida             | Letras, intentos máximos y usados, si se ganó, la palabra, hora local y día de la semana, nº de partida en la visita, si se corrigió una casilla, si está instalada |
+| `palabra_rechazada` | Un intento que no está en la lista  | Letras y la palabra (las más repetidas son candidatas a añadirse a `valid.txt`)                                                                     |
+| `cambio_letras`     | Al cambiar de modo                  | De qué longitud a cuál                                                                                                                               |
+| `compartir`         | Al compartir el resultado           | Si fue con el menú del móvil o copiando, letras y resultado                                                                                         |
+| `rae`               | Al abrir la definición en la RAE    | Letras                                                                                                                                               |
+
+Para saber si la gente vuelve sin identificar a nadie, el navegador guarda la fecha de la primera partida y
+cuántos días distintos se ha jugado (`infinidle:v1:player`). Con cada partida solo se envía el tramo
+(«1-7 días», «8-30»…), nunca las fechas.
+
+Si un bloqueador impide cargar el script (y hay conexión), el panel de fin de partida lo comenta con un
+aviso discreto, como mucho una vez por semana. El juego funciona igual.
+
+Para no contar tus propias partidas, en la consola del navegador del dominio de producción:
+`localStorage.setItem('umami.disabled', 1)`.
+
 ## Desarrollo
 
 Hace falta Node 24 y pnpm:
@@ -105,7 +131,10 @@ suelen detectarse y retirarse en las primeras horas.
 - Framework preset: ninguno (o Vite)
 - Build command: `pnpm build`
 - Build output directory: `dist`
-- Variable de entorno: `PNPM_VERSION=12.8.1`. La versión de Node la coge de `.node-version`.
+- Variables de entorno: `PNPM_VERSION=12.8.1` (la versión de Node la coge de `.node-version`) y, si se
+  quieren estadísticas de uso, `UMAMI_WEBSITE_ID` con el ID del sitio en Umami. Por defecto se usa Umami
+  Cloud; para otra instancia, `UMAMI_SCRIPT_URL` (dirección completa del script) y, si los eventos van a
+  otro sitio, `UMAMI_HOST_URL`.
 
 El sitio no se indexa: lleva `noindex` tanto en una etiqueta meta como en la cabecera `X-Robots-Tag`.
 Las vistas previas al compartir (WhatsApp, Telegram, X…) usan `public/og.png`, que se genera desde

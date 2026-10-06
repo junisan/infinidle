@@ -8,6 +8,7 @@ import { EndPanel, HelpPanel, SettingsPanel, StatsPanel } from './components/Pan
 import { MAX_ATTEMPTS, MIN_ATTEMPTS } from './lib/config.js'
 import { evaluate, keyStates, loadWords, normalize, peekWords, pickSolution } from './lib/words.js'
 import { emptyStats, load, recordResult, save } from './lib/storage.js'
+import { shouldShowBlockedNotice, track, trackGameEnd } from './lib/analytics.js'
 
 const PRAISE = ['¡Genial!', '¡Magnífico!', '¡Impresionante!', '¡Espléndido!', '¡Muy bien!', '¡Bien!', '¡Por los pelos!']
 const EMOJI = { correct: '🟩', present: '🟨', absent: '⬛' }
@@ -70,6 +71,11 @@ export default function App() {
   const [panel, setPanel] = useState(() => (load('seenHelp', false) ? null : 'help'))
   const [stats, setStats] = useState(() => load(`stats:${settings.length}`, emptyStats()))
   const [logoKey, setLogoKey] = useState(0)
+  const [blockedNotice, setBlockedNotice] = useState(false)
+  // Si en esta partida se ha usado lo de tocar una casilla para corregirla (va en las estadísticas)
+  const editedTile = useRef(false)
+  // Último intento rechazado: repetir Enter con la misma palabra no lo vuelve a contar
+  const lastRejected = useRef(null)
   const timers = useRef([])
   // Los intentos solo afectan a partidas nuevas: el efecto de carga lo lee sin depender de él
   const attemptsRef = useRef(settings.attempts)
@@ -104,6 +110,7 @@ export default function App() {
         setGame(restoreGame(w, attemptsRef.current))
         setStats(load(`stats:${length}`, emptyStats()))
         changeInput(emptyInput(length))
+        editedTile.current = false
         setRevealRow(-1)
         setBounceRow(-1)
       })
@@ -130,6 +137,7 @@ export default function App() {
     if (!words) return
     setGame((g) => newGame(length, settings.attempts, words.solutions, g?.solution))
     changeInput(emptyInput(length))
+    editedTile.current = false
     setRevealRow(-1)
     setBounceRow(-1)
     setPanel(null)
@@ -144,7 +152,12 @@ export default function App() {
   const submit = () => {
     const word = inputRef.current.letters.join('')
     if (word.length < game.length) return fail('Faltan letras')
-    if (!words.valid.has(word)) return fail('No está en la lista')
+    if (!words.valid.has(word)) {
+      // Las que más se rechacen son candidatas a entrar en la lista de intentos válidos
+      if (lastRejected.current !== word) track('palabra_rechazada', { letras: game.length, palabra: word.toLowerCase() })
+      lastRejected.current = word
+      return fail('No está en la lista')
+    }
 
     const target = normalize(game.solution)
     const guesses = [...game.guesses, word]
@@ -166,6 +179,14 @@ export default function App() {
       const next = recordResult(stats, won, guesses.length)
       setStats(next)
       save(`stats:${game.length}`, next)
+      trackGameEnd({
+        length: game.length,
+        maxAttempts: game.maxAttempts,
+        won,
+        attempts: guesses.length,
+        solution: game.solution,
+        editedTile: editedTile.current,
+      })
       if (won) {
         setBounceRow(row)
         setLogoKey((k) => k + 1)
@@ -173,7 +194,10 @@ export default function App() {
       } else {
         toast(game.solution.toUpperCase(), 2200)
       }
-      later(() => setPanel('end'), won ? 1500 : 1800)
+      later(() => {
+        setBlockedNotice(shouldShowBlockedNotice())
+        setPanel('end')
+      }, won ? 1500 : 1800)
     }, revealTime)
   }
 
@@ -187,7 +211,11 @@ export default function App() {
     changeInput((i) => editInput(i, key))
   }
 
-  const selectTile = (cursor) => !busyRef.current && changeInput((i) => ({ ...i, cursor }))
+  const selectTile = (cursor) => {
+    if (busyRef.current) return
+    editedTile.current = true
+    changeInput((i) => ({ ...i, cursor }))
+  }
 
   // Teclado físico (acepta letras con tilde y las normaliza)
   const onKeyRef = useRef(onKey)
@@ -217,11 +245,17 @@ export default function App() {
     const grid = evaluations.map((row) => row.map((s) => EMOJI[s]).join('')).join('\n')
     const text = `INFINIDLE ${game.length} letras · ${result}/${game.maxAttempts}\n\n${grid}\n\n${location.origin}`
     try {
-      if (navigator.share && matchMedia('(pointer: coarse)').matches) await navigator.share({ text })
+      const native = navigator.share && matchMedia('(pointer: coarse)').matches
+      if (native) await navigator.share({ text })
       else {
         await navigator.clipboard.writeText(text)
         toast('Copiado al portapapeles')
       }
+      track('compartir', {
+        metodo: native ? 'nativo' : 'portapapeles',
+        letras: game.length,
+        resultado: game.status === 'won' ? 'ganada' : 'perdida',
+      })
     } catch {
       // Compartir cancelado por el usuario
     }
@@ -316,7 +350,10 @@ export default function App() {
         <SettingsPanel
           onClose={closePanel}
           length={length}
-          onLength={(n) => setSettings((s) => ({ ...s, length: n }))}
+          onLength={(n) => {
+            if (n !== length) track('cambio_letras', { de: length, a: n })
+            setSettings((s) => ({ ...s, length: n }))
+          }}
           attempts={settings.attempts}
           onAttempts={changeAttempts}
           canChangeNow={game?.status === 'playing' && game.guesses.length === 0}
@@ -330,6 +367,7 @@ export default function App() {
           attempts={game.guesses.length}
           maxAttempts={game.maxAttempts}
           stats={stats}
+          blockedNotice={blockedNotice}
           onNext={nextWord}
           onShare={share}
         />

@@ -566,6 +566,11 @@ button {
   font-size: 14px;
   margin: 4px 0 0;
 }
+/* Aviso de estadísticas bloqueadas en el panel final */
+.modal .notice {
+  font-size: 13px;
+  margin-top: 16px;
+}
 .example {
   display: flex;
   gap: 4px;
