@@ -8,10 +8,10 @@ import { defineConfig } from 'vite'
 // WhatsApp, X, etc. muestren la imagen. En Cloudflare Pages se puede cambiar con la variable SITE_URL.
 const SITE_URL = (process.env.SITE_URL || 'https://infinidle.juannicolas.eu').replace(/\/+$/, '')
 
-// Estadísticas de uso anónimas (src/lib/analytics.js). Sin esta variable no se incluye el script de Umami:
-// así no cuentan las pruebas ni los forks. Se configura en Cloudflare Pages, igual que el servidor: por defecto
-// Umami Cloud; con una instancia propia, UMAMI_SCRIPT_URL es la dirección del script y UMAMI_HOST_URL, opcional,
-// a dónde manda los eventos (data-host-url).
+// Estadísticas de uso con consentimiento (src/lib/analytics.js). Sin esta variable no hay estadísticas ni se
+// pregunta nada: así no cuentan las pruebas ni los forks. Se configura en Cloudflare Pages, igual que el servidor:
+// por defecto Umami Cloud; con una instancia propia, UMAMI_SCRIPT_URL es la dirección del script y
+// UMAMI_HOST_URL, opcional, a dónde manda los eventos (data-host-url).
 const UMAMI_WEBSITE_ID = process.env.UMAMI_WEBSITE_ID
 const UMAMI_SCRIPT_URL = process.env.UMAMI_SCRIPT_URL || 'https://cloud.umami.is/script.js'
 const UMAMI_HOST_URL = process.env.UMAMI_HOST_URL?.replace(/\/+$/, '')
@@ -85,31 +85,25 @@ function serviceWorker() {
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    // Lo lee src/lib/analytics.js, que carga el script solo si el jugador acepta y solo en el dominio de
+    // SITE_URL (no en local ni en las vistas previas)
+    'import.meta.env.UMAMI': JSON.stringify(
+      UMAMI_WEBSITE_ID
+        ? {
+            src: UMAMI_SCRIPT_URL,
+            websiteId: UMAMI_WEBSITE_ID,
+            hostUrl: UMAMI_HOST_URL,
+            domain: new URL(SITE_URL).hostname,
+          }
+        : null,
+    ),
+  },
   plugins: [
     react(),
     {
       name: 'site-url',
       transformIndexHtml: (html) => html.replaceAll('%SITE_URL%', SITE_URL),
-    },
-    {
-      name: 'umami',
-      // data-domains: aunque el script esté, solo cuenta en el dominio de SITE_URL (no en local ni en las vistas previas)
-      transformIndexHtml: () =>
-        UMAMI_WEBSITE_ID
-          ? [
-              {
-                tag: 'script',
-                attrs: {
-                  defer: true,
-                  src: UMAMI_SCRIPT_URL,
-                  'data-website-id': UMAMI_WEBSITE_ID,
-                  ...(UMAMI_HOST_URL && { 'data-host-url': UMAMI_HOST_URL }),
-                  'data-domains': new URL(SITE_URL).hostname,
-                },
-                injectTo: 'head',
-              },
-            ]
-          : [],
     },
     wordUrls(),
     serviceWorker(),

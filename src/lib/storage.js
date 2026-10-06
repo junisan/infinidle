@@ -26,6 +26,14 @@ export function save(key, value) {
   }
 }
 
+export function remove(key) {
+  try {
+    localStorage.removeItem(PREFIX + key)
+  } catch {
+    // Sin acceso a localStorage
+  }
+}
+
 export const emptyStats = () => ({ played: 0, won: 0, streak: 0, maxStreak: 0, distribution: {} })
 
 export function recordResult(stats, won, attempts) {

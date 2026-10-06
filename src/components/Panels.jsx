@@ -1,5 +1,7 @@
 import Modal from './Modal.jsx'
+import { GitHubIcon } from './Icons.jsx'
 import { LENGTHS, MAX_ATTEMPTS, MIN_ATTEMPTS } from '../lib/config.js'
+import { analyticsAvailable, track } from '../lib/analytics.js'
 
 function Example({ word, marks }) {
   return (
@@ -35,9 +37,16 @@ export function HelpPanel({ onClose, maxAttempts }) {
         La <strong>O</strong> no está en la palabra.
       </p>
       <p className="muted">Puedes jugar con 5, 6 o 7 letras y cambiar el número de intentos en Ajustes.</p>
-      <p className="muted">
-        Se recogen estadísticas de uso anónimas, sin cookies, para mejorar el juego y sus listas de palabras.
-      </p>
+      {analyticsAvailable && (
+        <p className="muted">
+          Se recogen estadísticas de uso anónimas para mejorar el juego y sus listas de palabras. Si lo aceptas,
+          también se reconoce cuándo vuelves. Puedes cambiarlo en Ajustes.
+        </p>
+      )}
+      <a className="source muted" href="https://github.com/junisan/infinidle" target="_blank" rel="noreferrer">
+        <GitHubIcon />
+        Código en GitHub
+      </a>
     </Modal>
   )
 }
@@ -83,7 +92,42 @@ export function StatsPanel({ onClose, stats, length, maxAttempts }) {
   )
 }
 
-export function SettingsPanel({ onClose, length, onLength, attempts, onAttempts, canChangeNow }) {
+/** Se muestra antes de jugar y no se puede cerrar sin responder. Las dos opciones, igual de visibles. */
+export function ConsentPanel({ onAnswer }) {
+  return (
+    <Modal title="Estadísticas de uso">
+      <p>
+        Cuento de forma anónima cómo se juega: saber qué palabras se aciertan, se fallan o no están en la lista
+        me ayuda a mejorar INFINIDLE. ¿Me dejas, además, reconocer cuándo vuelves?
+      </p>
+      <p className="muted">
+        Si aceptas, se guarda en este dispositivo un identificador aleatorio: sirve para saber si vuelves, no
+        quién eres. Si no aceptas, no hay identificador y no sé si eres quien vino otro día. Los
+        datos no se usan para publicidad ni se ceden a nadie, y juegas igual en los dos casos.
+      </p>
+      <p className="muted">Puedes cambiarlo cuando quieras en Ajustes.</p>
+      <div className="actions even">
+        <button type="button" className="button secondary" onClick={() => onAnswer(false)}>
+          Rechazar
+        </button>
+        <button type="button" className="button secondary" onClick={() => onAnswer(true)}>
+          Aceptar
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+export function SettingsPanel({
+  onClose,
+  length,
+  onLength,
+  attempts,
+  onAttempts,
+  canChangeNow,
+  consent,
+  onConsent,
+}) {
   return (
     <Modal title="Ajustes" onClose={onClose}>
       <div className="setting">
@@ -116,6 +160,24 @@ export function SettingsPanel({ onClose, length, onLength, attempts, onAttempts,
           </button>
         </div>
       </div>
+      {analyticsAvailable && (
+        <div className="setting">
+          <div>
+            <strong>Reconocer cuándo vuelvo</strong>
+            <span className="muted">
+              Anónimas. Con «Sí», además, un identificador aleatorio que dice si vuelves, no quién eres.
+            </span>
+          </div>
+          <div className="segmented">
+            <button type="button" className={consent ? 'selected' : ''} onClick={() => onConsent(true)}>
+              Sí
+            </button>
+            <button type="button" className={consent ? '' : 'selected'} onClick={() => onConsent(false)}>
+              No
+            </button>
+          </div>
+        </div>
+      )}
     </Modal>
   )
 }
@@ -133,15 +195,14 @@ export function EndPanel({ onClose, won, solution, attempts, maxAttempts, stats,
         href={`https://dle.rae.es/${encodeURIComponent(solution)}`}
         target="_blank"
         rel="noreferrer"
-        data-umami-event="rae"
-        data-umami-event-letras={solution.length}
+        onClick={() => track('rae', { letras: solution.length })}
       >
         Ver «{solution}» en el diccionario de la RAE
       </a>
       {blockedNotice && (
         <p className="center muted notice">
-          Parece que algo en tu navegador bloquea las estadísticas anónimas del juego. Si te gusta INFINIDLE,
-          permitirlas me ayuda a saber qué palabras sobran o faltan. Sin cookies y sin saber quién eres.
+          Aceptaste las estadísticas de uso, pero parece que algo en tu navegador las bloquea. Si te gusta
+          INFINIDLE, permitirlas me ayuda a saber qué palabras sobran o faltan.
         </p>
       )}
       <div className="actions">

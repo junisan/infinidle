@@ -4,11 +4,18 @@ import Keyboard from './components/Keyboard.jsx'
 import Loading from './components/Loading.jsx'
 import Wordmark from './components/Wordmark.jsx'
 import { HelpIcon, StatsIcon, SettingsIcon } from './components/Icons.jsx'
-import { EndPanel, HelpPanel, SettingsPanel, StatsPanel } from './components/Panels.jsx'
+import { ConsentPanel, EndPanel, HelpPanel, SettingsPanel, StatsPanel } from './components/Panels.jsx'
 import { MAX_ATTEMPTS, MIN_ATTEMPTS } from './lib/config.js'
 import { evaluate, keyStates, loadWords, normalize, peekWords, pickSolution } from './lib/words.js'
 import { emptyStats, load, recordResult, save } from './lib/storage.js'
-import { shouldShowBlockedNotice, track, trackGameEnd } from './lib/analytics.js'
+import {
+  consentGranted,
+  needsConsent,
+  setConsent,
+  shouldShowBlockedNotice,
+  track,
+  trackGameEnd,
+} from './lib/analytics.js'
 
 const PRAISE = ['¡Genial!', '¡Magnífico!', '¡Impresionante!', '¡Espléndido!', '¡Muy bien!', '¡Bien!', '¡Por los pelos!']
 const EMOJI = { correct: '🟩', present: '🟨', absent: '⬛' }
@@ -68,7 +75,10 @@ export default function App() {
   const [bounceRow, setBounceRow] = useState(-1)
   const [shake, setShake] = useState(false)
   const [toasts, setToasts] = useState([])
-  const [panel, setPanel] = useState(() => (load('seenHelp', false) ? null : 'help'))
+  // Antes de jugar, si hay estadísticas configuradas, hay que responder si se aceptan; luego, la ayuda la primera vez
+  const helpOrNothing = () => (load('seenHelp', false) ? null : 'help')
+  const [panel, setPanel] = useState(() => (needsConsent() ? 'consent' : helpOrNothing()))
+  const [consent, setConsentState] = useState(consentGranted)
   const [stats, setStats] = useState(() => load(`stats:${settings.length}`, emptyStats()))
   const [logoKey, setLogoKey] = useState(0)
   const [blockedNotice, setBlockedNotice] = useState(false)
@@ -268,6 +278,18 @@ export default function App() {
     })
   }, [])
 
+  const answerConsent = (granted) => {
+    setConsent(granted)
+    setConsentState(granted)
+    setPanel(helpOrNothing())
+  }
+
+  const changeConsent = (granted) => {
+    if (granted === consent) return
+    setConsent(granted)
+    setConsentState(granted)
+  }
+
   const changeAttempts = (delta) => {
     const clamp = (n) => Math.min(MAX_ATTEMPTS, Math.max(MIN_ATTEMPTS, n + delta))
     setSettings((s) => ({ ...s, attempts: clamp(s.attempts) }))
@@ -342,6 +364,7 @@ export default function App() {
 
       <Keyboard states={keyboardStates} onKey={onKey} />
 
+      {panel === 'consent' && <ConsentPanel onAnswer={answerConsent} />}
       {panel === 'help' && <HelpPanel onClose={closePanel} maxAttempts={settings.attempts} />}
       {panel === 'stats' && (
         <StatsPanel onClose={closePanel} stats={stats} length={length} maxAttempts={settings.attempts} />
@@ -357,6 +380,8 @@ export default function App() {
           attempts={settings.attempts}
           onAttempts={changeAttempts}
           canChangeNow={game?.status === 'playing' && game.guesses.length === 0}
+          consent={consent}
+          onConsent={changeConsent}
         />
       )}
       {panel === 'end' && game && over && (

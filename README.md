@@ -22,8 +22,9 @@ rato que quieras.
   normales (sustantivos, adjetivos, infinitivos…), pero para probar letras vale cualquier palabra que
   exista: CANTÉIS, ÁRBOLES, TUVIERA…
 
-No hay cuentas, ni anuncios, ni cookies. El progreso se guarda en el navegador (localStorage) y se
-recogen estadísticas de uso anónimas para mejorar el juego ([más abajo](#estadísticas-de-uso) qué se mide).
+No hay cuentas, ni anuncios, ni cookies. El progreso se guarda en tu navegador (localStorage). También
+recojo algunas estadísticas anónimas de cómo se juega para mejorarlo ([más abajo](#estadísticas-de-uso)
+te cuento cuáles).
 
 ## Las palabras
 
@@ -87,11 +88,24 @@ inicio» en iPhone) y funciona sin Internet. Hace falta abrirlo una vez con cone
 
 ## Estadísticas de uso
 
-Para saber cómo se juega y mejorar las listas de palabras se usa [Umami](https://umami.is), sin cookies
-y sin ningún identificador del jugador. `vite.config.js` añade el script a `index.html` solo si existe la
-variable de entorno `UMAMI_WEBSITE_ID` (sin ella, ni las pruebas ni los forks envían nada), y aun así
-solo cuenta en el dominio de producción (`data-domains`), no en local ni en las vistas previas. Los eventos salen de
-`src/lib/analytics.js`:
+INFINIDLE es un proyecto personal: no lleva publicidad, no gano dinero con él y no vendo ni le paso
+datos a nadie. Aun así, me encantaría saber cómo se juega para seguir mejorándolo: qué palabras se
+atascan, cuáles echáis en falta en la lista, si se prefieren 5, 6 o 7 letras… Los datos van a mi propia
+instancia de [Umami](https://umami.is), una herramienta de estadísticas pensada para respetar la
+privacidad, y solo los uso para mejorar el juego.
+
+La primera vez que entras te pregunto si me dejas reconocer cuándo vuelves. Si me dices que sí, tu
+navegador guarda un identificador aleatorio que no dice nada de ti: me sirve para saber que la misma
+persona ha vuelto otro día, pero no quién eres. **Si me dices que no, juegas exactamente igual** y las
+estadísticas se envían sin identificador: no sé si eres la misma persona de otro día. Puedes cambiar de
+opinión cuando quieras en Ajustes: si lo desactivas, el identificador se borra y deja de enviarse.
+
+Si dices que no, te lo volveré a preguntar dentro de una semana, por si cambias de idea. Si dices que
+sí, no te pregunto más hasta dentro de dos años.
+
+Con cada visita, Umami ve lo mismo que cualquier web: navegador, sistema, tamaño de pantalla, idioma,
+de qué web vienes y el país o ciudad aproximados (los saca de la IP, pero la IP no se guarda). Además,
+desde el juego se envía esto:
 
 | Evento              | Cuándo                              | Datos                                                                                                                                                |
 | ------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -101,15 +115,26 @@ solo cuenta en el dominio de producción (`data-domains`), no en local ni en las
 | `compartir`         | Al compartir el resultado           | Si fue con el menú del móvil o copiando, letras y resultado                                                                                         |
 | `rae`               | Al abrir la definición en la RAE    | Letras                                                                                                                                               |
 
-Para saber si la gente vuelve sin identificar a nadie, el navegador guarda la fecha de la primera partida y
-cuántos días distintos se ha jugado (`infinidle:v1:player`). Con cada partida solo se envía el tramo
-(«1-7 días», «8-30»…), nunca las fechas.
+Si aceptaste pero algo en tu navegador bloquea las estadísticas, al terminar una partida te lo comento
+con un aviso discreto, como mucho una vez por semana. El juego funciona igual.
 
-Si un bloqueador impide cargar el script (y hay conexión), el panel de fin de partida lo comenta con un
-aviso discreto, como mucho una vez por semana. El juego funciona igual.
+### Por dentro
 
-Para no contar tus propias partidas, en la consola del navegador del dominio de producción:
-`localStorage.setItem('umami.disabled', 1)`.
+- `vite.config.js` pasa la configuración de Umami al código solo si existe la variable de entorno
+  `UMAMI_WEBSITE_ID`. Sin ella (pruebas, forks) no hay estadísticas ni se pregunta nada. Tampoco fuera
+  del dominio de producción (el de `SITE_URL`): ni en local ni en las vistas previas.
+- `src/lib/analytics.js` guarda la respuesta en `infinidle:v1:consent` (`{ granted, at, id }`). El
+  rechazo vale 7 días, sin identificador. La aceptación vale 24 meses, con un `crypto.randomUUID()` que
+  se manda a Umami como [Distinct ID](https://docs.umami.is/docs/distinct-ids) (hace falta Umami 2.18
+  o superior). Al renovarla se mantiene el mismo identificador.
+- El aviso no se puede cerrar sin responder, y «Aceptar» y «Rechazar» tienen el mismo tamaño y aspecto.
+- El script se carga en cuanto hay respuesta, sea cual sea; hasta entonces no se envía nada. Va con
+  `data-auto-track="false"`, para que la primera visita ya lleve el identificador si se aceptó.
+- Si se retira el permiso sin recargar, el script de Umami no permite borrar el identificador que ya
+  tiene, así que `umamiBeforeSend` (`data-before-send`) lo quita de cada envío mientras no haya permiso. Por eso los eventos se mandan siempre desde el código, no con atributos
+  `data-umami-event`.
+- Para no contar tus propias partidas, en la consola del navegador del dominio de producción:
+  `localStorage.setItem('umami.disabled', 1)`.
 
 ## Desarrollo
 
@@ -132,7 +157,7 @@ suelen detectarse y retirarse en las primeras horas.
 - Build command: `pnpm build`
 - Build output directory: `dist`
 - Variables de entorno: `PNPM_VERSION=12.8.1` (la versión de Node la coge de `.node-version`) y, si se
-  quieren estadísticas de uso, `UMAMI_WEBSITE_ID` con el ID del sitio en Umami. Por defecto se usa Umami
+  quieren estadísticas de uso (con aviso de consentimiento), `UMAMI_WEBSITE_ID` con el ID del sitio en Umami. Por defecto se usa Umami
   Cloud; para otra instancia, `UMAMI_SCRIPT_URL` (dirección completa del script) y, si los eventos van a
   otro sitio, `UMAMI_HOST_URL`.
 

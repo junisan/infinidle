@@ -566,6 +566,18 @@ button {
   font-size: 14px;
   margin: 4px 0 0;
 }
+/* Enlace al código, discreto, al final de la ayuda */
+.source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  text-decoration: none;
+}
+.source:hover {
+  color: var(--text);
+}
 /* Aviso de estadísticas bloqueadas en el panel final */
 .modal .notice {
   font-size: 13px;
@@ -589,6 +601,10 @@ button {
   gap: 10px;
   justify-content: center;
   margin-top: 20px;
+}
+/* Consentimiento: aceptar y rechazar del mismo tamaño */
+.actions.even .button {
+  flex: 1;
 }
 
 .stats {

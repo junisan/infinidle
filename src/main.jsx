@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.jsx'
 import { loadWords } from './lib/words.js'
 import { load } from './lib/storage.js'
+import { startAnalytics } from './lib/analytics.js'
 
 // No montamos React hasta tener las palabras del modo guardado: así la pantalla de arranque
 // de index.html (CARGANDO) sigue animándose sin cortes y se pasa directamente al tablero.
@@ -17,6 +18,9 @@ loadWords(length)
       </StrictMode>,
     )
   })
+
+// Estadísticas de uso, solo si el jugador ya las había aceptado (si no, App le pregunta antes de jugar)
+startAnalytics()
 
 // Guarda el juego en el dispositivo para poder jugar sin conexión (src/sw.js). Solo en producción, y
 // tras la carga, para que la descarga de lo que se guarda no compita con la primera partida.
