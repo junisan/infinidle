@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Modal from './Modal.jsx'
 import { GitHubIcon } from './Icons.jsx'
 import { LENGTHS, MAX_ATTEMPTS, MIN_ATTEMPTS } from '../lib/config.js'
@@ -182,7 +183,19 @@ export function SettingsPanel({
   )
 }
 
-export function EndPanel({ onClose, won, solution, attempts, maxAttempts, stats, blockedNotice, onNext, onShare }) {
+export function EndPanel({
+  onClose,
+  won,
+  solution,
+  attempts,
+  maxAttempts,
+  stats,
+  blockedNotice,
+  onNext,
+  onShare,
+  onReport,
+}) {
+  const [reported, setReported] = useState(false)
   return (
     <Modal title={won ? '¡Acertaste!' : 'Otra vez será'} onClose={onClose}>
       <p className="center muted">La palabra era</p>
@@ -199,6 +212,22 @@ export function EndPanel({ onClose, won, solution, attempts, maxAttempts, stats,
       >
         Ver «{solution}» en el diccionario de la RAE
       </a>
+      {/* Llega a las estadísticas: las palabras más denunciadas se revisan a mano y se quitan de la lista */}
+      {analyticsAvailable &&
+        (reported ? (
+          <p className="center muted report">Gracias, la revisaré.</p>
+        ) : (
+          <button
+            type="button"
+            className="center muted report"
+            onClick={() => {
+              onReport()
+              setReported(true)
+            }}
+          >
+            ¿No debería estar esta palabra? Avísame
+          </button>
+        ))}
       {blockedNotice && (
         <p className="center muted notice">
           Aceptaste las estadísticas de uso, pero parece que algo en tu navegador las bloquea. Si te gusta

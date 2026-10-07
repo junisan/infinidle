@@ -59,6 +59,13 @@ export default function App() {
   const loadedLength = useRef(words ? settings.length : null)
   const [input, setInput] = useState(() => emptyInput(settings.length))
   const [busy, setBusy] = useState(false)
+  // Entre el final de la partida y la ventana de fin: no se puede pasar a la siguiente sin verla
+  const [ending, setEnding] = useState(false)
+  const endingRef = useRef(false)
+  const changeEnding = (value) => {
+    endingRef.current = value
+    setEnding(value)
+  }
   // Copias síncronas de la fila y del bloqueo por animación: varias teclas pueden llegar antes del
   // siguiente render (p. ej. la última letra y Enter a la vez) y deben ver siempre el valor más reciente
   const inputRef = useRef(input)
@@ -186,6 +193,7 @@ export default function App() {
       changeBusy(false)
       setRevealRow(-1)
       if (status === 'playing') return
+      changeEnding(true)
       const next = recordResult(stats, won, guesses.length)
       setStats(next)
       save(`stats:${game.length}`, next)
@@ -206,13 +214,14 @@ export default function App() {
       }
       later(() => {
         setBlockedNotice(shouldShowBlockedNotice())
+        changeEnding(false)
         setPanel('end')
       }, won ? 1500 : 1800)
     }, revealTime)
   }
 
   const onKey = (key) => {
-    if (!ready || busyRef.current) return
+    if (!ready || busyRef.current || endingRef.current) return
     if (game.status !== 'playing') {
       if (key === 'ENTER') nextWord()
       return
@@ -355,7 +364,8 @@ export default function App() {
           />
         )}
 
-        {ready && over && !busy && panel !== 'end' && (
+        {/* Tras cerrar la ventana de fin, para seguir sin volver a abrirla */}
+        {ready && over && !busy && !ending && panel !== 'end' && (
           <button type="button" className="button primary next" onClick={nextWord}>
             Siguiente palabra
           </button>
@@ -395,6 +405,7 @@ export default function App() {
           blockedNotice={blockedNotice}
           onNext={nextWord}
           onShare={share}
+          onReport={() => track('palabra_denunciada', { letras: game.length, palabra: game.solution })}
         />
       )}
     </div>
