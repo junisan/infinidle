@@ -1,9 +1,11 @@
 // Service worker: deja el juego guardado en el dispositivo para poder jugar sin conexión.
 // No se empaqueta con la app: al terminar el build, vite.config.js lo copia a dist/sw.js y rellena
-// VERSION (hash del contenido de todo lo guardado) y FILES. Cualquier cambio en un despliegue cambia
+// VERSION (hash del contenido de todo lo guardado), FILES y COMMIT. Cualquier cambio en un despliegue cambia
 // sw.js, el navegador instala el nuevo, descarga todo de nuevo y borra la caché anterior.
 const VERSION = '__VERSION__'
 const FILES = ['__FILES__']
+// Commit de lo guardado: lo pregunta Ajustes para saber si la versión sin conexión está al día
+const COMMIT = '__COMMIT__'
 const CACHE = `infinidle-${VERSION}`
 // Con cobertura mala (no hay red, pero tampoco falla) no se espera más que esto para la página
 const NETWORK_TIMEOUT = 3000
@@ -14,10 +16,26 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      // 'reload' salta la caché HTTP: las listas y fuentes no llevan hash y podrían venir de la versión anterior
-      .then((cache) => cache.addAll(FILES.map((url) => new Request(url, { cache: 'reload' }))))
+      .then((cache) => Promise.all(FILES.map((url) => store(cache, url))))
       .then(() => self.skipWaiting()),
   )
+})
+
+/**
+ * Lo de assets/ lleva hash en el nombre: si ya estaba guardado de una versión anterior, es el mismo fichero
+ * y no se vuelve a descargar (cada commit cambia el JS, pero las listas casi nunca).
+ * Lo demás se pide con 'reload', que salta la caché HTTP: podría venir de la versión anterior.
+ */
+async function store(cache, url) {
+  const old = url.startsWith('/assets/') && (await caches.match(url, MATCH))
+  if (old) return cache.put(url, old)
+  const response = await fetch(new Request(url, { cache: 'reload' }))
+  if (!response.ok) throw new Error(`${url}: ${response.status}`)
+  return cache.put(url, response)
+}
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'version') event.ports[0]?.postMessage({ commit: COMMIT })
 })
 
 self.addEventListener('activate', (event) => {

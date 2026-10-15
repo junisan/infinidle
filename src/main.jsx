@@ -5,6 +5,7 @@ import App from './App.jsx'
 import { loadWords } from './lib/words.js'
 import { load } from './lib/storage.js'
 import { startAnalytics } from './lib/analytics.js'
+import { endIntro } from './lib/intro.js'
 
 // No montamos React hasta tener las palabras del modo guardado: así la pantalla de arranque
 // de index.html (CARGANDO) sigue animándose sin cortes y se pasa directamente al tablero.
@@ -17,6 +18,8 @@ loadWords(length)
         <App />
       </StrictMode>,
     )
+    // En el arranque en frío, la intro (index.html) termina sobre el logo de la cabecera
+    endIntro()
   })
 
 // Estadísticas de uso, solo si el jugador ya las había aceptado (si no, App le pregunta antes de jugar)

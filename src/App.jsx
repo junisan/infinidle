@@ -89,6 +89,8 @@ export default function App() {
   const [stats, setStats] = useState(() => load(`stats:${settings.length}`, emptyStats()))
   const [logoKey, setLogoKey] = useState(0)
   const [blockedNotice, setBlockedNotice] = useState(false)
+  // Para la ventana de fin: la racha que se acaba de perder, o si la de ahora supera la mejor anterior
+  const [streakEnd, setStreakEnd] = useState({ lost: 0, record: false })
   // Si en esta partida se ha usado lo de tocar una casilla para corregirla (va en las estadísticas)
   const editedTile = useRef(false)
   // Último intento rechazado: repetir Enter con la misma palabra no lo vuelve a contar
@@ -196,6 +198,7 @@ export default function App() {
       changeEnding(true)
       const next = recordResult(stats, won, guesses.length)
       setStats(next)
+      setStreakEnd({ lost: won ? 0 : stats.streak, record: won && stats.maxStreak > 0 && next.streak > stats.maxStreak })
       save(`stats:${game.length}`, next)
       trackGameEnd({
         length: game.length,
@@ -402,6 +405,7 @@ export default function App() {
           attempts={game.guesses.length}
           maxAttempts={game.maxAttempts}
           stats={stats}
+          streakEnd={streakEnd}
           blockedNotice={blockedNotice}
           onNext={nextWord}
           onShare={share}

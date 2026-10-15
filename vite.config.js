@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve, sep } from 'node:path'
@@ -15,6 +16,17 @@ const SITE_URL = (process.env.SITE_URL || 'https://infinidle.juannicolas.eu').re
 const UMAMI_WEBSITE_ID = process.env.UMAMI_WEBSITE_ID
 const UMAMI_SCRIPT_URL = process.env.UMAMI_SCRIPT_URL || 'https://cloud.umami.is/script.js'
 const UMAMI_HOST_URL = process.env.UMAMI_HOST_URL?.replace(/\/+$/, '')
+
+// Versión que se ve en Ajustes: commit (Cloudflare Pages lo da en CF_PAGES_COMMIT_SHA; en local, git) y
+// momento de la compilación. También va en sw.js, para saber qué versión hay guardada para jugar sin conexión.
+function commit() {
+  try {
+    return (process.env.CF_PAGES_COMMIT_SHA || execSync('git rev-parse HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })).trim().slice(0, 7)
+  } catch {
+    return null
+  }
+}
+const BUILD = { commit: commit(), date: new Date().toISOString() }
 
 // Lo que no hace falta para jugar sin conexión no se guarda en el dispositivo
 const NOT_OFFLINE = ['_headers', 'og.png', 'logo.svg', 'fonts/OFL.txt', 'icons/apple-touch-icon.png']
@@ -52,7 +64,7 @@ function wordUrls() {
   }
 }
 
-/** Escribe dist/sw.js a partir de src/sw.js con la lista de todo lo que hay que guardar y su versión. */
+/** Escribe dist/sw.js a partir de src/sw.js con la lista de todo lo que hay que guardar, su versión y el commit. */
 function serviceWorker() {
   let root, outDir
   return {
@@ -78,6 +90,7 @@ function serviceWorker() {
       const sw = readFileSync(join(root, 'src/sw.js'), 'utf8')
         .replace("'__VERSION__'", JSON.stringify(version))
         .replace("['__FILES__']", JSON.stringify(urls))
+        .replace("'__COMMIT__'", JSON.stringify(BUILD.commit))
       writeFileSync(join(outDir, 'sw.js'), sw)
     },
   }
@@ -86,6 +99,7 @@ function serviceWorker() {
 // https://vite.dev/config/
 export default defineConfig({
   define: {
+    'import.meta.env.BUILD': JSON.stringify(BUILD),
     // Lo lee src/lib/analytics.js, que carga el script solo si el jugador acepta y solo en el dominio de
     // SITE_URL (no en local ni en las vistas previas)
     'import.meta.env.UMAMI': JSON.stringify(

@@ -11,10 +11,13 @@ const TILES = [<InfinityIcon key="inf" />, 'D', 'L', 'E']
  */
 export default function Wordmark({ playKey = 0 }) {
   const [clicks, setClicks] = useState(0)
+  // Tras la intro del arranque en frío (src/lib/intro.js) el logo ya llega volteado: no se repite
+  const [afterIntro] = useState(() => document.documentElement.classList.contains('intro'))
+  const still = afterIntro && playKey === 0 && clicks === 0
   return (
     <button
       type="button"
-      className="wordmark"
+      className={`wordmark${still ? ' still' : ''}`}
       aria-label="INFINIDLE"
       onClick={() => setClicks((c) => c + 1)}
       key={`${playKey}-${clicks}`}

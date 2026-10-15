@@ -152,6 +152,9 @@ button {
   background: var(--teal);
   animation: logo-flip 900ms ease-in-out backwards;
 }
+.wordmark.still .wordmark-tile {
+  animation: none;
+}
 .wordmark-tile.infinity svg {
   width: 82%;
   height: 82%;
@@ -636,6 +639,21 @@ button.report:hover {
   font-size: 12px;
   color: var(--muted);
 }
+/* Ventana de fin: racha actual (o la que se acaba de perder) y la mejor */
+.stats.streaks {
+  grid-template-columns: repeat(2, 1fr);
+  margin: 14px 0 12px;
+}
+.streaks .lost strong {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 3px;
+}
+.streaks .record strong,
+.streaks .record span {
+  color: var(--teal);
+  font-weight: 900;
+}
 .distribution {
   display: grid;
   gap: 4px;
@@ -701,6 +719,19 @@ button.report:hover {
 .stepper button:disabled {
   opacity: 0.35;
   cursor: default;
+}
+/* Versión, discreta, al final de Ajustes */
+.version {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 12px;
+}
+.modal .version p {
+  margin: 2px 0;
+}
+.version code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
 }
 
 @media (max-width: 380px) {

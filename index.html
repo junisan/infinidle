@@ -29,6 +29,37 @@
       // Primero de todo: descarga las listas del modo guardado en paralelo con CSS, fuentes y React
       // (src/lib/words.js recoge la promesa). Va antes de cualquier hoja de estilos para no esperarla.
       ;(function () {
+        // Intro (#intro) solo al arrancar en frío: la primera carga de la pestaña o de la app instalada.
+        // sessionStorage sobrevive a las recargas, pero no a cerrar la pestaña o la app.
+        var cold = false
+        try {
+          cold = !sessionStorage.getItem('infinidle:v1:booted')
+          sessionStorage.setItem('infinidle:v1:booted', '1')
+        } catch (e) {}
+        if (cold) {
+          document.documentElement.classList.add('intro')
+          // src/lib/intro.js la termina. Tocar o pulsar una tecla la salta, sin que llegue al juego.
+          var intro = (window.__infinidleIntro = { start: performance.now(), skipped: false, onskip: null })
+          var events = ['keydown', 'pointerdown', 'click']
+          var skip = function (e) {
+            if (e.type === 'keydown' && (e.ctrlKey || e.metaKey || e.altKey)) return
+            e.stopImmediatePropagation()
+            e.preventDefault()
+            if (e.type !== 'click' && !intro.skipped) {
+              intro.skipped = true
+              if (intro.onskip) intro.onskip()
+            }
+          }
+          events.forEach(function (type) {
+            addEventListener(type, skip, true)
+          })
+          intro.done = function () {
+            events.forEach(function (type) {
+              removeEventListener(type, skip, true)
+            })
+          }
+        }
+
         var length = 5
         try {
           var saved = JSON.parse(localStorage.getItem('infinidle:v1:settings'))
@@ -163,9 +194,136 @@
       @media (prefers-reduced-motion: reduce) {
         .splash-row span, .splash-row .splash-inf { animation: none; }
       }
+
+      /* Intro del arranque en frío: INFINIDLE se voltea como el logo, INFINI se pliega en la ficha ∞ y
+         src/lib/intro.js lleva el resultado hasta el logo de la cabecera. Fichas en proporción con las de
+         .wordmark (hueco 3/32, radio 5/32, letra 0,62) para que al encogerse coincidan. */
+      #intro {
+        display: none;
+      }
+      html.intro #intro {
+        --teal: #1a9384;
+        --amber: #d9a21b;
+        --slate: #5d6b7a;
+        --ink: #16202b;
+        --line: #9aa5b1;
+        --soft: #6b7785;
+        --t: min(48px, calc((100vw - 32px) / 9.75));
+        --step: calc(var(--t) * 35 / 32);
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        font-family: 'Nunito', system-ui, sans-serif;
+        font-weight: 900;
+        color: var(--ink);
+      }
+      @media (prefers-color-scheme: dark) {
+        html.intro #intro {
+          --ink: #eef2f6;
+          --line: #56626f;
+          --soft: #94a0ad;
+          --slate: #363f4a;
+          background: #11161c;
+        }
+      }
+      html.intro .wordmark {
+        visibility: hidden;
+      }
+      .intro-row {
+        display: flex;
+        gap: calc(var(--t) * 3 / 32);
+        animation: intro-center 280ms ease-in-out 960ms both;
+      }
+      .intro-row span {
+        position: relative;
+        width: var(--t);
+        height: var(--t);
+        display: grid;
+        place-items: center;
+        border-radius: calc(var(--t) * 5 / 32);
+        font-size: calc(var(--t) * 0.62);
+        color: #fff;
+        background: var(--teal);
+        animation:
+          intro-flip 560ms ease-in-out calc(80ms + var(--i) * 40ms) both,
+          intro-fold 280ms ease-in-out 960ms both;
+      }
+      .intro-row span:nth-child(1) { --i: 0; z-index: 1; animation-name: intro-flip, none; }
+      .intro-row span:nth-child(2) { --i: 1; }
+      .intro-row span:nth-child(3) { --i: 2; }
+      .intro-row span:nth-child(4) { --i: 3; }
+      .intro-row span:nth-child(5) { --i: 4; }
+      .intro-row span:nth-child(6) { --i: 5; }
+      .intro-row span:nth-child(7) { --i: 6; animation-name: intro-flip, intro-slide; }
+      .intro-row span:nth-child(8) { --i: 7; animation-name: intro-flip, intro-slide; }
+      .intro-row span:nth-child(9) { --i: 8; animation-name: intro-flip, intro-slide; }
+      /* La primera ficha cambia la I por ∞ mientras las demás de INFINI se pliegan sobre ella */
+      .intro-row b,
+      .intro-row svg {
+        grid-area: 1 / 1;
+        animation: intro-out 200ms ease-in 960ms both;
+      }
+      .intro-row svg {
+        width: 82%;
+        height: 82%;
+        animation-name: intro-in;
+        animation-delay: 1040ms;
+      }
+      .intro-wait {
+        position: absolute;
+        bottom: 28%;
+        margin: 0;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--soft);
+        animation: intro-in 400ms ease 1800ms both;
+      }
+      /* Como logo-flip de src/index.css. Perspectiva propia de cada ficha: con una sola para toda la fila,
+         las de los extremos se deforman. El plegado usa translate, que no choca con este transform. */
+      @keyframes intro-flip {
+        0% { transform: perspective(400px) rotateX(0); background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
+        20% { transform: perspective(400px) rotateX(90deg); background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
+        21% { background: var(--slate); color: #fff; box-shadow: none; }
+        40% { transform: perspective(400px) rotateX(0); background: var(--slate); }
+        55% { transform: perspective(400px) rotateX(90deg); background: var(--amber); }
+        70% { transform: perspective(400px) rotateX(0); background: var(--amber); }
+        85% { transform: perspective(400px) rotateX(90deg); background: var(--teal); }
+        100% { transform: perspective(400px) rotateX(0); background: var(--teal); }
+      }
+      @keyframes intro-fold {
+        to { translate: calc(var(--i) * -1 * var(--step)); opacity: 0; }
+      }
+      @keyframes intro-slide {
+        to { translate: calc(-5 * var(--step)); }
+      }
+      /* Quedan 4 fichas de 9: se centra el grupo */
+      @keyframes intro-center {
+        to { translate: calc(2.5 * var(--step)); }
+      }
+      @keyframes intro-in {
+        from { opacity: 0; }
+      }
+      @keyframes intro-out {
+        to { opacity: 0; }
+      }
+      /* Sin movimiento: el logo final directamente, y src/lib/intro.js lo desvanece */
+      @media (prefers-reduced-motion: reduce) {
+        #intro *, #intro { animation-duration: 1ms !important; animation-delay: 0ms !important; }
+      }
     </style>
   </head>
   <body>
+    <div id="intro" aria-hidden="true">
+      <div class="intro-logo">
+        <div class="intro-row"><span><b>I</b><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"><path d="M12 12c-1.8-2.6-3.4-3.8-5.2-3.8a3.8 3.8 0 0 0 0 7.6c1.8 0 3.4-1.2 5.2-3.8s3.4-3.8 5.2-3.8a3.8 3.8 0 0 1 0 7.6c-1.8 0-3.4-1.2-5.2-3.8Z" /></svg></span><span>N</span><span>F</span><span>I</span><span>N</span><span>I</span><span>D</span><span>L</span><span>E</span></div>
+      </div>
+      <p class="intro-wait">Preparando palabras…</p>
+    </div>
     <div id="root">
       <div class="splash" role="status" aria-label="Cargando">
         <svg class="splash-logo" viewBox="0 0 64 64" aria-hidden="true">

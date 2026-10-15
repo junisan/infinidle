@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Modal from './Modal.jsx'
 import { GitHubIcon } from './Icons.jsx'
 import { LENGTHS, MAX_ATTEMPTS, MIN_ATTEMPTS } from '../lib/config.js'
 import { analyticsAvailable, track } from '../lib/analytics.js'
+import { appVersion, offlineCommit } from '../lib/version.js'
 
 function Example({ word, marks }) {
   return (
@@ -179,7 +180,41 @@ export function SettingsPanel({
           </div>
         </div>
       )}
+      <Version />
     </Modal>
+  )
+}
+
+/** Versión en ejecución y la guardada para jugar sin conexión: tras desplegar, deben coincidir. */
+function Version() {
+  const [offline, setOffline] = useState(undefined)
+  useEffect(() => {
+    if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return
+    const check = () => offlineCommit().then(setOffline)
+    check()
+    // El service worker nuevo se activa solo al terminar de guardar la versión nueva
+    navigator.serviceWorker.addEventListener('controllerchange', check)
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', check)
+  }, [])
+  return (
+    <div className="version muted">
+      <p>
+        Versión <code>{appVersion.commit}</code> · {appVersion.date}
+      </p>
+      {offline !== undefined && (
+        <p>
+          {offline === null ? (
+            'Preparando para jugar sin conexión…'
+          ) : offline === appVersion.commit ? (
+            'Lista para jugar sin conexión'
+          ) : (
+            <>
+              Sin conexión: <code>{offline}</code>, se está actualizando
+            </>
+          )}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -190,6 +225,7 @@ export function EndPanel({
   attempts,
   maxAttempts,
   stats,
+  streakEnd,
   blockedNotice,
   onNext,
   onShare,
@@ -200,9 +236,24 @@ export function EndPanel({
     <Modal title={won ? '¡Acertaste!' : 'Otra vez será'} onClose={onClose}>
       <p className="center muted">La palabra era</p>
       <p className="solution">{solution.toUpperCase()}</p>
-      <p className="center muted">
-        {won ? `En ${attempts} de ${maxAttempts} intentos · racha de ${stats.streak}` : `Racha a cero · mejor racha ${stats.maxStreak}`}
-      </p>
+      {won && <p className="center muted">En {attempts} de {maxAttempts} intentos</p>}
+      <div className="stats streaks">
+        {streakEnd.lost > 0 ? (
+          <div className="lost">
+            <strong>{streakEnd.lost}</strong>
+            <span>Racha perdida</span>
+          </div>
+        ) : (
+          <div>
+            <strong>{stats.streak}</strong>
+            <span>Racha actual</span>
+          </div>
+        )}
+        <div className={streakEnd.record ? 'record' : ''}>
+          <strong>{stats.maxStreak}</strong>
+          <span>{streakEnd.record ? '¡Nuevo récord!' : 'Mejor racha'}</span>
+        </div>
+      </div>
       <a
         className="center link"
         href={`https://dle.rae.es/${encodeURIComponent(solution)}`}

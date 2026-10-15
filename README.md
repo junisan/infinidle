@@ -1,6 +1,10 @@
-# INFINIDLE
+<p align="center">
+  <img src="public/logo.svg" alt="" width="96" height="96">
+</p>
 
-Adivina palabras en español en seis intentos, sin tener que esperar a mañana para la siguiente.
+<h1 align="center">INFINIDLE</h1>
+
+<p align="center">Adivina palabras en español en seis intentos, sin tener que esperar a mañana para la siguiente.</p>
 
 Me gustan mucho los juegos de adivinar la palabra del día, pero una al día se me queda corta. INFINIDLE
 es lo mismo sin ese límite: aciertas (o fallas), pulsas «Siguiente palabra» y a por otra. Así todo el
