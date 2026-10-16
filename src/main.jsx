@@ -25,6 +25,17 @@ loadWords(length)
 // Estadísticas de uso, solo si el jugador ya las había aceptado (si no, App le pregunta antes de jugar)
 startAnalytics()
 
+// En la app instalada en Android, al volver de otra pantalla (p. ej. la RAE, que se abre encima) Chrome
+// repinta la barra de navegación con el color del manifiesto, blanco, aunque el sistema esté en oscuro.
+// Cambiar theme-color y devolverlo en el siguiente fotograma le obliga a recalcularlo con el de la página.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return
+  const metas = document.querySelectorAll('meta[name="theme-color"]')
+  const colors = [...metas].map((meta) => meta.content)
+  metas.forEach((meta) => (meta.content = '#000000'))
+  requestAnimationFrame(() => metas.forEach((meta, i) => (meta.content = colors[i])))
+})
+
 // Guarda el juego en el dispositivo para poder jugar sin conexión (src/sw.js). Solo en producción, y
 // tras la carga, para que la descarga de lo que se guarda no compita con la primera partida.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
